@@ -173,6 +173,8 @@ class Rocket extends CoreModule
     else if(params(FastLoadWord)) io.dmem.resp.bits.data_word_bypass
     else wb_reg_wdata
 
+  detect_lockup(id_pc, 5000)
+
   // detect bypass opportunities
   val ex_waddr = ex_reg_inst(11,7)
   val mem_waddr = mem_reg_inst(11,7)
@@ -606,5 +608,19 @@ class Rocket extends CoreModule
       ens = ens || en
       when (ens) { r := _next }
     }
+  }
+
+  def detect_lockup(pc: UInt, maxcnt: Int) {
+    val saved_pc = Reg(pc)
+    val count = Reg(UInt(width = log2Up(maxcnt)))
+
+    when (saved_pc != pc) {
+      count := UInt(0)
+    } .otherwise {
+      count := count + UInt(1)
+    }
+    saved_pc := pc
+
+    assert(count != UInt(maxcnt - 1), "Program counter locked up")
   }
 }
